@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-warm-accent: #d4b483;
+  --color-warm-accent-light: rgba(212, 180, 131, 0.08);
+  --color-warm-accent-border: rgba(212, 180, 131, 0.2);
+  --color-warm-accent-glow: rgba(212, 180, 131, 0.1);
+  
+  --color-bg-base: #1b1b1b;
+  --color-bg-sidebar: #141414;
+  --color-bg-card: #232323;
+  --color-bg-card-light: #2c2c2c;
+  
+  --color-border-subtle: #2b2b2b;
+  --color-border-hover: #3e3e3e;
+  
+  --color-text-main: #e3e3e2;
+  --color-text-muted: #a1a1aa;
+  --color-text-dark: #1b1b1b;
+
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-space: 'Space Grotesk', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+
+/* Base resets & theme overrides */
+body {
+  margin: 0;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-warm-accent-border);
+}
+
+/* Clean UI components inspired by Claude */
+.claude-card {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0; /* Prevents flex items from expanding beyond bounds */
+}
+
+.claude-card:hover {
+  border-color: var(--color-border-hover);
+}
+
+.claude-card-active {
+  border-color: var(--color-warm-accent-border);
+  background-color: rgba(35, 35, 35, 0.85);
+  box-shadow: 0 4px 20px var(--color-warm-accent-glow);
+}
+
+.claude-badge-warm {
+  background-color: var(--color-warm-accent-light);
+  border: 1px solid var(--color-warm-accent-border);
+  color: var(--color-warm-accent);
+}
+
+/* Typography styles for markdown prose */
+.prose {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.prose pre {
+  background-color: #121212 !important;
+  border: 1px solid var(--color-border-subtle) !important;
+  color: #e3e3e2 !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  word-wrap: normal !important;
+  white-space: pre !important;
+  border-radius: 8px;
+}
+
+.prose code {
+  color: var(--color-warm-accent) !important;
+  background-color: rgba(212, 180, 131, 0.08) !important;
+  border: 1px solid rgba(212, 180, 131, 0.15) !important;
+  word-break: break-all !important;
+  white-space: pre-wrap !important;
+}
+
+.prose strong {
+  color: var(--color-text-main) !important;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.2s ease-out forwards;
+}
