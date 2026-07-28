@@ -14,15 +14,23 @@ app.get("/", (req, res) => {
 // Battle API endpoint
 app.post("/api/chat", async (req, res) => {
     try {
-        const { problem } = req.body
+        const { problem, modelA, modelB } = req.body
         if (!problem) {
             return res.status(400).json({ error: "Property 'problem' is required in request body" })
         }
         
-        console.log(`Starting AI Battle for query: "${problem}"`)
-        const result = await runGraph(problem)
-        res.json(result)
-    } catch (error) {
+        const selectedModelA = modelA || "mistral"
+        const selectedModelB = modelB || "cohere"
+        
+        console.log(`Starting AI Battle between ${selectedModelA} and ${selectedModelB} for query: "${problem}"`)
+        const result = await runGraph(problem, selectedModelA, selectedModelB)
+        
+        res.json({
+            ...result,
+            modelA: selectedModelA,
+            modelB: selectedModelB
+        })
+    } catch (error: any) {
         console.error("Error executing battle graph:", error)
         res.status(500).json({ 
             error: "Internal Server Error", 

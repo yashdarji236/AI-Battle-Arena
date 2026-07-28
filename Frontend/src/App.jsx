@@ -295,6 +295,142 @@ const parseMarkdown = (text) => {
   return html;
 };
 
+const availableModels = [
+  { id: 'gemini', label: 'Gemini Flash', provider: 'Google', elo: '2,250', winrate: '84.5%', param: 'LATEST' },
+  { id: 'mistral', label: 'Mistral Medium', provider: 'Mistral', elo: '2,140', winrate: '78.2%', param: '70B PARAM' },
+  { id: 'cohere', label: 'Cohere Command', provider: 'Cohere', elo: '2,010', winrate: '71.5%', param: 'PROPRIETARY' },
+  { id: 'groq', label: 'Llama 3.3 (Groq)', provider: 'Meta', elo: '2,190', winrate: '80.5%', param: '70B PARAM' },
+  { id: 'deepseek', label: 'DeepSeek Chat (OpenRouter)', provider: 'DeepSeek', elo: '2,220', winrate: '82.1%', param: 'LATEST' },
+  { id: 'claude', label: 'Claude 3 Haiku (OpenRouter)', provider: 'Anthropic', elo: '2,150', winrate: '79.2%', param: 'LIGHTWEIGHT' },
+  { id: 'gpt', label: 'GPT-4o Mini (GitHub)', provider: 'OpenAI', elo: '2,080', winrate: '75.2%', param: 'LIGHTWEIGHT' }
+];
+
+const getModelInfo = (modelId) => {
+  return availableModels.find(m => m.id === modelId) || { id: modelId, label: modelId, provider: modelId, elo: 'N/A', winrate: 'N/A', param: 'N/A' };
+};
+
+const getModelAvatarConfig = (modelId) => {
+  let bgGradient = 'from-blue-500 to-indigo-650';
+  let initial = 'G';
+
+  if (modelId === 'mistral') {
+    bgGradient = 'from-orange-500 to-red-600';
+    initial = 'M';
+  } else if (modelId === 'cohere') {
+    bgGradient = 'from-teal-500 to-emerald-650';
+    initial = 'C';
+  } else if (modelId === 'groq') {
+    bgGradient = 'from-purple-500 to-pink-600';
+    initial = 'L';
+  } else if (modelId === 'deepseek') {
+    bgGradient = 'from-cyan-500 to-blue-600';
+    initial = 'D';
+  } else if (modelId === 'claude') {
+    bgGradient = 'from-orange-600 to-amber-500';
+    initial = 'Cl';
+  } else if (modelId === 'gpt') {
+    bgGradient = 'from-emerald-500 to-teal-600';
+    initial = 'O';
+  }
+
+  return { bgGradient, initial };
+};
+
+const renderModelAvatar = (modelId) => {
+  const { bgGradient, initial } = getModelAvatarConfig(modelId);
+  return (
+    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${bgGradient} flex items-center justify-center text-[10px] font-space font-bold text-white border border-white/10 flex-shrink-0 select-none`}>
+      {initial}
+    </div>
+  );
+};
+
+const renderLargeModelAvatar = (modelId) => {
+  const { bgGradient, initial } = getModelAvatarConfig(modelId);
+  return (
+    <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${bgGradient} flex items-center justify-center text-2xl font-space font-bold text-white border border-white/15 relative z-10 shadow-lg`}>
+      {initial}
+    </div>
+  );
+};
+
+const ModelSelector = ({ label, selectedId, otherSelectedId, onChange, disabled }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedModel = getModelInfo(selectedId);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-1.5 bg-black/20 hover:bg-white/[0.02] border border-border-subtle hover:border-warm-accent/40 rounded-xl text-text-main text-xs font-semibold focus:outline-hidden transition-all duration-150 cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">{label}:</span>
+        {renderModelAvatar(selectedId)}
+        <span>{selectedModel.label}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 text-text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute bottom-full mb-2 left-0 w-64 bg-[#141414] border border-border-subtle rounded-xl shadow-2xl p-1.5 z-50 animate-slide-in">
+          <div className="text-[9px] font-mono text-text-muted uppercase tracking-wider px-2.5 py-1.5 border-b border-border-subtle/30 mb-1">
+            Select Contender
+          </div>
+          <div className="max-h-[380px] overflow-y-auto space-y-0.5">
+            {availableModels.map((m) => {
+              const isDisabled = m.id === otherSelectedId;
+              const isSelected = m.id === selectedId;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  disabled={isDisabled}
+                  onClick={() => {
+                    onChange(m.id);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${isSelected
+                      ? 'bg-warm-accent-light text-warm-accent font-semibold border border-warm-accent/20'
+                      : isDisabled
+                        ? 'opacity-30 cursor-not-allowed border border-transparent'
+                        : 'hover:bg-white/[0.03] text-text-muted hover:text-text-main border border-transparent'
+                    }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    {renderModelAvatar(m.id)}
+                    <div>
+                      <div className="text-xs font-semibold">{m.label}</div>
+                      <div className="text-[9px] font-mono text-text-muted/65 leading-tight">{m.provider} • {m.param}</div>
+                    </div>
+                  </div>
+                  <div className="text-right font-mono text-[9px] text-text-muted">
+                    <div>ELO {m.elo}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function App() {
   // --- States ---
   const [history, setHistory] = useState(() => {
@@ -307,6 +443,9 @@ export default function App() {
     return saved || null;
   });
 
+  const [modelA, setModelA] = useState(() => localStorage.getItem('nexus_arena_model_a') || 'mistral');
+  const [modelB, setModelB] = useState(() => localStorage.getItem('nexus_arena_model_b') || 'cohere');
+
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState('idle'); // idle, sending, models, judging, final
@@ -315,6 +454,14 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [hoveredVerdict, setHoveredVerdict] = useState(null);
   const [mobileActiveSlides, setMobileActiveSlides] = useState({});
+
+  useEffect(() => {
+    localStorage.setItem('nexus_arena_model_a', modelA);
+  }, [modelA]);
+
+  useEffect(() => {
+    localStorage.setItem('nexus_arena_model_b', modelB);
+  }, [modelB]);
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -475,7 +622,7 @@ export default function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ problem: prompt }),
+        body: JSON.stringify({ problem: prompt, modelA, modelB }),
       });
 
       if (!response.ok) {
@@ -492,6 +639,8 @@ export default function App() {
       const assistantMsg = {
         role: 'assistant',
         problem: data.problem || prompt,
+        modelA: data.modelA || modelA,
+        modelB: data.modelB || modelB,
         solution_1: data.solution_1 || "No solution generated.",
         solution_2: data.solution_2 || "No solution generated.",
         judge: {
@@ -540,9 +689,11 @@ export default function App() {
   };
 
   // Helper to determine winner text/color
-  const getWinnerInfo = (score1, score2) => {
-    if (score1 > score2) return { text: 'MISTRAL WINS', color: 'text-warm-accent border-warm-accent/30 bg-warm-accent-light', winner: 1 };
-    if (score2 > score1) return { text: 'COHERE WINS', color: 'text-warm-accent border-warm-accent/30 bg-warm-accent-light', winner: 2 };
+  const getWinnerInfo = (score1, score2, modelAId = 'mistral', modelBId = 'cohere') => {
+    const labelA = getModelInfo(modelAId).label.toUpperCase();
+    const labelB = getModelInfo(modelBId).label.toUpperCase();
+    if (score1 > score2) return { text: `${labelA} WINS`, color: 'text-warm-accent border-warm-accent/30 bg-warm-accent-light', winner: 1 };
+    if (score2 > score1) return { text: `${labelB} WINS`, color: 'text-warm-accent border-warm-accent/30 bg-warm-accent-light', winner: 2 };
     return { text: 'DRAW BATTLE', color: 'text-gray-400 border-border-subtle bg-white/5', winner: 0 };
   };
 
@@ -665,9 +816,6 @@ export default function App() {
             <div className="font-space font-bold tracking-wider text-sm text-text-main">
               NEURAL_ARENA
             </div>
-            <div className="hidden md:flex gap-6 font-mono text-xs border-l border-border-subtle pl-4">
-              <span className="text-text-muted">Active Room: <span className="text-text-main font-bold">{activeChat ? activeChat.title : 'Welcome Center'}</span></span>
-            </div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -679,8 +827,8 @@ export default function App() {
         {/* Chat / Messages Panel */}
         <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 space-y-4 md:space-y-6 relative z-10">
 
-          {/* Welcome view when there is no current chat or empty messages */}
-          {(!activeChat || activeChat.messages.length === 0) && !loading ? (
+          {/* Welcome view when there is no current chat selected */}
+          {!activeChat && !loading && (
             <div className="max-w-4xl mx-auto py-12 flex flex-col items-center">
 
               {/* Branding element */}
@@ -695,26 +843,26 @@ export default function App() {
 
               {/* Battle Stage Matchup Preview (Claude / Stitch Minimalist) */}
               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 w-full items-center mb-12">
-                {/* Model Alpha (Mistral) */}
+                {/* Model Alpha (A) */}
                 <div className="claude-card p-6 border-l-4 border-l-warm-accent relative group overflow-hidden">
                   <div className="flex flex-col items-center text-center">
                     <div className="relative mb-4">
-                      <img alt="Model Alpha Avatar" className="w-16 h-16 rounded-full border border-border-subtle relative z-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALFYT8jF0Qnks1e3lHDwhxoyiuaggP8PgB5x6kJsdodvGPqfSlfyhoQMElPjq6urLW04bYd9Oh_12ZE5UPYO8H345XME4mDU7pc6f_4hK1_B0fq2fGXzSulUQBDJzjHPDWUlhNuBUkbZ4V63gF8NSQ6sr8-S7jZV3b0WOdRyXA7e_3lLT8HCZ1A2T8knUL7PHStBfJUWfEgJr4zFIcefdd8cwziLlD_JlMZSNA6Zel5T7JpCurAzcbkINDHeMjer_IPPzxCi8DoGK-" />
+                      {renderLargeModelAvatar(modelA)}
                       <div className="absolute bottom-0 right-0 bg-warm-accent text-text-dark px-1.5 py-0.5 font-mono text-[8px] font-bold rounded-sm">ALPHA_01</div>
                     </div>
-                    <h3 className="font-space font-bold text-sm text-text-main mb-1">MISTRAL_MEDIUM</h3>
+                    <h3 className="font-space font-bold text-sm text-text-main mb-1">{getModelInfo(modelA).label.toUpperCase()}</h3>
                     <div className="flex gap-2 mb-3">
-                      <span className="claude-badge-warm px-2 py-0.5 font-mono text-[9px] uppercase rounded-sm">Mistral-Medium</span>
-                      <span className="bg-white/5 text-text-muted px-2 py-0.5 font-mono text-[9px] rounded-sm">70B PARAM</span>
+                      <span className="claude-badge-warm px-2 py-0.5 font-mono text-[9px] uppercase rounded-sm">{getModelInfo(modelA).provider}</span>
+                      <span className="bg-white/5 text-text-muted px-2 py-0.5 font-mono text-[9px] rounded-sm">{getModelInfo(modelA).param}</span>
                     </div>
                     <div className="w-full grid grid-cols-3 gap-1 pt-3 border-t border-border-subtle font-mono text-[9px]">
                       <div>
                         <p className="text-text-muted">WINRATE</p>
-                        <p className="text-warm-accent font-bold text-xs">78.2%</p>
+                        <p className="text-warm-accent font-bold text-xs">{getModelInfo(modelA).winrate}</p>
                       </div>
                       <div>
                         <p className="text-text-muted">ELO</p>
-                        <p className="text-text-main font-bold text-xs">2,140</p>
+                        <p className="text-text-main font-bold text-xs">{getModelInfo(modelA).elo}</p>
                       </div>
                       <div>
                         <p className="text-text-muted">LATENCY</p>
@@ -731,30 +879,30 @@ export default function App() {
                   <div className="font-mono text-[8px] text-text-muted tracking-widest uppercase">Combat</div>
                 </div>
 
-                {/* Model Beta (Cohere) */}
+                {/* Model Beta (B) */}
                 <div className="claude-card p-6 border-r-4 border-r-warm-accent relative group overflow-hidden">
                   <div className="flex flex-col items-center text-center">
                     <div className="relative mb-4">
-                      <img alt="Model Beta Avatar" className="w-16 h-16 rounded-full border border-border-subtle relative z-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALFYT8jF0Qnks1e3lHDwhxoyiuaggP8PgB5x6kJsdodvGPqfSlfyhoQMElPjq6urLW04bYd9Oh_12ZE5UPYO8H345XME4mDU7pc6f_4hK1_B0fq2fGXzSulUQBDJzjHPDWUlhNuBUkbZ4V63gF8NSQ6sr8-S7jZV3b0WOdRyXA7e_3lLT8HCZ1A2T8knUL7PHStBfJUWfEgJr4zFIcefdd8cwziLlD_JlMZSNA6Zel5T7JpCurAzcbkINDHeMjer_IPPzxCi8DoGK-" />
+                      {renderLargeModelAvatar(modelB)}
                       <div className="absolute bottom-0 left-0 bg-warm-accent text-text-dark px-1.5 py-0.5 font-mono text-[8px] font-bold rounded-sm">BETA_02</div>
                     </div>
-                    <h3 className="font-space font-bold text-sm text-text-main mb-1">COHERE_COMMAND</h3>
+                    <h3 className="font-space font-bold text-sm text-text-main mb-1">{getModelInfo(modelB).label.toUpperCase()}</h3>
                     <div className="flex gap-2 mb-3">
-                      <span className="claude-badge-warm px-2 py-0.5 font-mono text-[9px] uppercase rounded-sm">Command-A</span>
-                      <span className="bg-white/5 text-text-muted px-2 py-0.5 font-mono text-[9px] rounded-sm">PROPRIETARY</span>
+                      <span className="claude-badge-warm px-2 py-0.5 font-mono text-[9px] uppercase rounded-sm">{getModelInfo(modelB).provider}</span>
+                      <span className="bg-white/5 text-text-muted px-2 py-0.5 font-mono text-[9px] rounded-sm">{getModelInfo(modelB).param}</span>
                     </div>
                     <div className="w-full grid grid-cols-3 gap-1 pt-3 border-t border-border-subtle font-mono text-[9px]">
                       <div>
                         <p className="text-text-muted">WINRATE</p>
-                        <p className="text-warm-accent font-bold text-xs">71.5%</p>
+                        <p className="text-warm-accent font-bold text-xs">{getModelInfo(modelB).winrate}</p>
                       </div>
                       <div>
                         <p className="text-text-muted">ELO</p>
-                        <p className="text-text-main font-bold text-xs">2,010</p>
+                        <p className="text-text-main font-bold text-xs">{getModelInfo(modelB).elo}</p>
                       </div>
                       <div>
                         <p className="text-text-muted">LATENCY</p>
-                        <p className="text-text-main font-bold text-xs">~1.8s</p>
+                        <p className="text-text-main font-bold text-xs">~1.5s</p>
                       </div>
                     </div>
                   </div>
@@ -788,8 +936,47 @@ export default function App() {
               </div>
 
             </div>
-          ) : (
-            // Message log rendering
+          )}
+
+          {/* Active empty chat suggestions view */}
+          {activeChat && activeChat.messages.length === 0 && !loading && (
+            <div className="max-w-4xl mx-auto py-12 flex flex-col items-center">
+              <div className="text-center mb-8 relative">
+                <p className="text-text-muted text-sm max-w-xl mx-auto leading-relaxed">
+                  Start a new fight by selecting a preset query below or entering a custom prompt in the input field.
+                </p>
+              </div>
+
+              {/* Sample Prompts section */}
+              <div className="w-full relative z-10">
+                <h4 className="font-mono text-[10px] uppercase text-text-muted tracking-wider mb-3 border-b border-border-subtle pb-1.5">
+                  Combat Presets
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {samplePrompts.map((sample, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setInputText(sample.prompt);
+                        handleSubmit(sample.prompt);
+                      }}
+                      className="claude-card text-left p-4 hover:border-warm-accent/40 hover:bg-white/[0.01] transition-all duration-200 flex flex-col gap-1 group cursor-pointer"
+                    >
+                      <span className="font-space font-bold text-xs text-warm-accent group-hover:text-text-main transition-colors">
+                        {sample.title}
+                      </span>
+                      <span className="text-xs text-text-muted truncate w-full">
+                        {sample.prompt}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Message log rendering */}
+          {activeChat && activeChat.messages.length > 0 && (
             <div className="max-w-5xl mx-auto space-y-8">
               {activeChat?.messages.map((msg, index) => {
                 if (msg.role === 'user') {
@@ -821,7 +1008,7 @@ export default function App() {
                   );
                 } else {
                   // Combat Response layout: Side-by-side Models Solutions + Judge Panel below
-                  const verdict = getWinnerInfo(msg.judge.solution_1_score, msg.judge.solution_2_score);
+                  const verdict = getWinnerInfo(msg.judge.solution_1_score, msg.judge.solution_2_score, msg.modelA || 'mistral', msg.modelB || 'cohere');
 
                   const isAHovered = hoveredVerdict?.index === index && (hoveredVerdict?.type === 'A' || hoveredVerdict?.type === 'both_good');
                   const isBHovered = hoveredVerdict?.index === index && (hoveredVerdict?.type === 'B' || hoveredVerdict?.type === 'both_good');
@@ -855,20 +1042,14 @@ export default function App() {
 
                             <div className="flex justify-between items-center mb-4 pb-2 border-b border-border-subtle">
                               <div className="flex items-center gap-2.5">
-                                <img className="w-5 h-5 rounded-full border border-border-subtle object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALFYT8jF0Qnks1e3lHDwhxoyiuaggP8PgB5x6kJsdodvGPqfSlfyhoQMElPjq6urLW04bYd9Oh_12ZE5UPYO8H345XME4mDU7pc6f_4hK1_B0fq2fGXzSulUQBDJzjHPDWUlhNuBUkbZ4V63gF8NSQ6sr8-S7jZV3b0WOdRyXA7e_3lLT8HCZ1A2T8knUL7PHStBfJUWfEgJr4zFIcefdd8cwziLlD_JlMZSNA6Zel5T7JpCurAzcbkINDHeMjer_IPPzxCi8DoGK-" alt="Mistral" />
+                                {renderModelAvatar(msg.modelA || 'mistral')}
                                 <div>
                                   <h4 className="font-space font-bold text-text-main text-xs">Assistant A</h4>
-                                  <span className="font-mono text-[8px] uppercase text-text-muted tracking-wider">Mistral-Medium</span>
+                                  <span className="font-mono text-[8px] uppercase text-text-muted tracking-wider">{getModelInfo(msg.modelA || 'mistral').label}</span>
                                 </div>
                               </div>
 
                               <div className="flex items-center gap-1.5">
-                                {/* Refresh (decorative) */}
-                                <button className="text-text-muted hover:text-text-main p-1 hover:bg-white/5 rounded cursor-pointer transition-colors" title="Retry">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3-3m-3 3l-3-3" />
-                                  </svg>
-                                </button>
                                 {/* Copy */}
                                 <button
                                   onClick={() => navigator.clipboard.writeText(msg.solution_1)}
@@ -877,12 +1058,6 @@ export default function App() {
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                  </svg>
-                                </button>
-                                {/* Expand */}
-                                <button className="text-text-muted hover:text-text-main p-1 hover:bg-white/5 rounded cursor-pointer transition-colors" title="Toggle Fullscreen">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                                   </svg>
                                 </button>
 
@@ -916,20 +1091,14 @@ export default function App() {
 
                             <div className="flex justify-between items-center mb-4 pb-2 border-b border-border-subtle">
                               <div className="flex items-center gap-2.5">
-                                <img className="w-5 h-5 rounded-full border border-border-subtle object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALFYT8jF0Qnks1e3lHDwhxoyiuaggP8PgB5x6kJsdodvGPqfSlfyhoQMElPjq6urLW04bYd9Oh_12ZE5UPYO8H345XME4mDU7pc6f_4hK1_B0fq2fGXzSulUQBDJzjHPDWUlhNuBUkbZ4V63gF8NSQ6sr8-S7jZV3b0WOdRyXA7e_3lLT8HCZ1A2T8knUL7PHStBfJUWfEgJr4zFIcefdd8cwziLlD_JlMZSNA6Zel5T7JpCurAzcbkINDHeMjer_IPPzxCi8DoGK-" alt="Cohere" />
+                                {renderModelAvatar(msg.modelB || 'cohere')}
                                 <div>
                                   <h4 className="font-space font-bold text-text-main text-xs">Assistant B</h4>
-                                  <span className="font-mono text-[8px] uppercase text-text-muted tracking-wider">Cohere-Command</span>
+                                  <span className="font-mono text-[8px] uppercase text-text-muted tracking-wider">{getModelInfo(msg.modelB || 'cohere').label}</span>
                                 </div>
                               </div>
 
                               <div className="flex items-center gap-1.5">
-                                {/* Refresh (decorative) */}
-                                <button className="text-text-muted hover:text-text-main p-1 hover:bg-white/5 rounded cursor-pointer transition-colors" title="Retry">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3-3m-3 3l-3-3" />
-                                  </svg>
-                                </button>
                                 {/* Copy */}
                                 <button
                                   onClick={() => navigator.clipboard.writeText(msg.solution_2)}
@@ -938,12 +1107,6 @@ export default function App() {
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                  </svg>
-                                </button>
-                                {/* Expand */}
-                                <button className="text-text-muted hover:text-text-main p-1 hover:bg-white/5 rounded cursor-pointer transition-colors" title="Toggle Fullscreen">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                                   </svg>
                                 </button>
 
@@ -1095,12 +1258,12 @@ export default function App() {
                           {/* Right: Scores comparison HUD */}
                           <div className="flex items-center gap-4 bg-black/10 p-2.5 rounded-xl border border-border-subtle">
                             <div className="text-center px-2">
-                              <div className="font-mono text-[8px] uppercase tracking-wider text-text-muted">Mistral</div>
+                              <div className="font-mono text-[8px] uppercase tracking-wider text-text-muted">{getModelInfo(msg.modelA || 'mistral').label}</div>
                               <div className="font-space font-bold text-base text-warm-accent">{msg.judge.solution_1_score}/10</div>
                             </div>
                             <div className="text-sm font-bold font-mono text-text-muted">VS</div>
                             <div className="text-center px-2">
-                              <div className="font-mono text-[8px] uppercase tracking-wider text-text-muted">Cohere</div>
+                              <div className="font-mono text-[8px] uppercase tracking-wider text-text-muted">{getModelInfo(msg.modelB || 'cohere').label}</div>
                               <div className="font-space font-bold text-base text-warm-accent">{msg.judge.solution_2_score}/10</div>
                             </div>
                           </div>
@@ -1120,14 +1283,59 @@ export default function App() {
                           </button>
 
                           {expandedReasoning && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 text-xs leading-relaxed font-mono text-text-main">
-                              <div className="p-3 bg-black/15 rounded border border-border-subtle">
-                                <span className="text-warm-accent font-bold block mb-1">MISTRAL EVALUATION:</span>
-                                <p className="text-text-muted leading-relaxed">{msg.judge.solution_1_reasoing}</p>
+                            <div className="space-y-3">
+                              <div className="relative">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 text-xs leading-relaxed font-mono text-text-main">
+                                  <div className={`p-3 bg-black/15 rounded border border-border-subtle ${activeSlide === 'A' ? 'block animate-slide-in' : 'hidden md:block'}`}>
+                                    <span className="text-warm-accent font-bold block mb-1">{getModelInfo(msg.modelA || 'mistral').label.toUpperCase()} EVALUATION:</span>
+                                    <p className="text-text-muted leading-relaxed">{msg.judge.solution_1_reasoing}</p>
+                                  </div>
+                                  <div className={`p-3 bg-black/15 rounded border border-border-subtle ${activeSlide === 'B' ? 'block animate-slide-in' : 'hidden md:block'}`}>
+                                    <span className="text-warm-accent font-bold block mb-1">{getModelInfo(msg.modelB || 'cohere').label.toUpperCase()} EVALUATION:</span>
+                                    <p className="text-text-muted leading-relaxed">{msg.judge.solution_2_resoning}</p>
+                                  </div>
+                                </div>
+
+                                {/* Floating Mobile Slide Arrow for Judge Evaluation */}
+                                <div className="md:hidden">
+                                  {activeSlide === 'A' ? (
+                                    <button
+                                      onClick={() => setMobileActiveSlides(prev => ({ ...prev, [index]: 'B' }))}
+                                      className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 w-8 h-8 rounded-full bg-[#1b1b1b] border border-border-subtle flex items-center justify-center text-text-muted hover:text-text-main shadow-lg z-30 cursor-pointer transition-all active:scale-95"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                      </svg>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => setMobileActiveSlides(prev => ({ ...prev, [index]: 'A' }))}
+                                      className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-8 h-8 rounded-full bg-[#1b1b1b] border border-border-subtle flex items-center justify-center text-text-muted hover:text-text-main shadow-lg z-30 cursor-pointer transition-all active:scale-95"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                              <div className="p-3 bg-black/15 rounded border border-border-subtle">
-                                <span className="text-warm-accent font-bold block mb-1">COHERE EVALUATION:</span>
-                                <p className="text-text-muted leading-relaxed">{msg.judge.solution_2_resoning}</p>
+
+                              {/* Mobile Pagination Dots for Judge Evaluation */}
+                              <div className="flex md:hidden items-center justify-center gap-2.5 mt-2">
+                                <button
+                                  onClick={() => setMobileActiveSlides(prev => ({ ...prev, [index]: 'A' }))}
+                                  className={`transition-all duration-300 h-1.5 cursor-pointer ${activeSlide === 'A'
+                                    ? 'w-5 rounded-full bg-[#d4b483]'
+                                    : 'w-1.5 rounded-full bg-text-muted/30 hover:bg-text-muted/50'
+                                    }`}
+                                />
+                                <button
+                                  onClick={() => setMobileActiveSlides(prev => ({ ...prev, [index]: 'B' }))}
+                                  className={`transition-all duration-300 h-1.5 cursor-pointer ${activeSlide === 'B'
+                                    ? 'w-5 rounded-full bg-[#d4b483]'
+                                    : 'w-1.5 rounded-full bg-text-muted/30 hover:bg-text-muted/50'
+                                    }`}
+                                />
                               </div>
                             </div>
                           )}
@@ -1179,7 +1387,7 @@ export default function App() {
                     {loadingPhase === 'models' ? '⚙' : loadingPhase === 'judging' ? '✓' : '•'}
                   </span>
                   <span className={loadingPhase === 'models' ? 'text-text-main' : 'text-text-muted'}>
-                    Running parallel runs: <span className="text-warm-accent">Mistral-Medium</span> &amp; <span className="text-warm-accent">Cohere-Command</span>
+                    Running parallel runs: <span className="text-warm-accent">{getModelInfo(modelA).label}</span> &amp; <span className="text-warm-accent">{getModelInfo(modelB).label}</span>
                   </span>
                 </div>
 
@@ -1221,28 +1429,50 @@ export default function App() {
               />
 
               {/* Action Toolbar inside input box */}
-              <div className="flex items-center justify-between border-t border-border-subtle pt-2.5 mt-2 px-2">
-                <div className="hidden sm:flex items-center gap-1.5 font-mono text-[9.5px] text-text-muted">
-                  <span>Submit:</span>
-                  <kbd className="bg-white/5 px-1.5 py-0.5 rounded border border-border-subtle">Enter</kbd>
-                  <span>Newline:</span>
-                  <kbd className="bg-white/5 px-1.5 py-0.5 rounded border border-border-subtle">Shift + Enter</kbd>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-2.5 mt-2 px-2">
+
+                {/* Model Selection Custom Dropdowns */}
+                <div className="flex items-center flex-wrap gap-3">
+                  <ModelSelector
+                    label="A"
+                    selectedId={modelA}
+                    otherSelectedId={modelB}
+                    onChange={setModelA}
+                    disabled={loading}
+                  />
+
+                  <span className="text-warm-accent font-space font-bold text-xs uppercase select-none">vs</span>
+
+                  <ModelSelector
+                    label="B"
+                    selectedId={modelB}
+                    otherSelectedId={modelA}
+                    onChange={setModelB}
+                    disabled={loading}
+                  />
                 </div>
 
-                {/* Submit button */}
-                <button
-                  onClick={() => handleSubmit()}
-                  disabled={loading || !inputText.trim()}
-                  className={`flex items-center gap-2 py-1.5 px-4 rounded-lg font-space font-bold uppercase tracking-wider text-xs transition-all duration-200 cursor-pointer ${loading || !inputText.trim()
-                    ? 'bg-bg-sidebar text-text-muted border border-border-subtle cursor-not-allowed shadow-none'
-                    : 'bg-warm-accent text-text-dark hover:bg-white hover:text-black active:translate-y-0'
-                    }`}
-                >
-                  {loading ? 'Running...' : 'Run Battle'}
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                  </svg>
-                </button>
+                {/* Submit button and hotkeys */}
+                <div className="flex items-center gap-4 ml-auto">
+                  <div className="hidden sm:flex items-center gap-1.5 font-mono text-[9.5px] text-text-muted">
+                    <span>Submit:</span>
+                    <kbd className="bg-white/5 px-1.5 py-0.5 rounded border border-border-subtle">Enter</kbd>
+                  </div>
+
+                  <button
+                    onClick={() => handleSubmit()}
+                    disabled={loading || !inputText.trim()}
+                    className={`flex items-center gap-2 py-1.5 px-4 rounded-lg font-space font-bold uppercase tracking-wider text-xs transition-all duration-200 cursor-pointer ${loading || !inputText.trim()
+                      ? 'bg-bg-sidebar text-text-muted border border-border-subtle cursor-not-allowed shadow-none'
+                      : 'bg-warm-accent text-text-dark hover:bg-white hover:text-black active:translate-y-0'
+                      }`}
+                  >
+                    {loading ? 'Running...' : 'Run Battle'}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
             </div>
