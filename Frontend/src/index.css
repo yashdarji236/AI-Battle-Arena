@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..750;1,300..750&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -6,23 +6,24 @@
   --color-warm-accent-light: rgba(212, 180, 131, 0.08);
   --color-warm-accent-border: rgba(212, 180, 131, 0.2);
   --color-warm-accent-glow: rgba(212, 180, 131, 0.1);
-  
-  --color-bg-base: #1b1b1b;
-  --color-bg-sidebar: #141414;
-  --color-bg-card: #232323;
-  --color-bg-card-light: #2c2c2c;
-  
-  --color-border-subtle: #2b2b2b;
-  --color-border-hover: #3e3e3e;
-  
-  --color-text-main: #e3e3e2;
-  --color-text-muted: #a1a1aa;
-  --color-text-dark: #1b1b1b;
 
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
-  --font-space: 'Space Grotesk', sans-serif;
+  --color-bg-base: #050505;
+  --color-bg-sidebar: #0a0a0a;
+  --color-bg-card: #0f0f0f;
+  --color-bg-card-light: #181818;
+
+  --color-border-subtle: #1c1c1c;
+  --color-border-hover: #2e2e2e;
+
+  --color-text-main: #f3f4f6;
+  --color-text-muted: #a3a3a3;
+  --color-text-dark: #050505;
+
+  --font-sans: 'Space Grotesk', sans-serif;
+  --font-serif: 'Cormorant Garamond', serif;
   --font-mono: 'Space Mono', monospace;
 }
+
 
 /* Base resets & theme overrides */
 body {
@@ -59,7 +60,8 @@ body {
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  min-width: 0; /* Prevents flex items from expanding beyond bounds */
+  min-width: 0;
+  /* Prevents flex items from expanding beyond bounds */
 }
 
 .claude-card:hover {
@@ -114,6 +116,7 @@ body {
     transform: translateY(1rem);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -122,4 +125,9 @@ body {
 
 .animate-slide-in {
   animation: slideIn 0.2s ease-out forwards;
+}
+
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
 }
