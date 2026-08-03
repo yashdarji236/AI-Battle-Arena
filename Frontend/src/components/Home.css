@@ -5,6 +5,10 @@
 
 
 
+html {
+  scroll-behavior: smooth !important;
+}
+
 .om-theme-wrapper {
   --canvas: #090E14;
   --frame: #0F172A;

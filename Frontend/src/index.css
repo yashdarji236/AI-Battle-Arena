@@ -26,6 +26,10 @@
 
 
 /* Base resets & theme overrides */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   background-color: var(--color-bg-base);
