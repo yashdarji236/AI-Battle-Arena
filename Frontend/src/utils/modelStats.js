@@ -41,7 +41,7 @@ const INITIAL_MODELS = [
   },
   {
     id: 'groq',
-    label: 'Llama 3.3 (Groq)',
+    label: 'Llama 3.3',
     fullName: 'Meta Llama 3.3 70B Versatile',
     provider: 'Meta',
     tier: '70B PARAM',
@@ -144,7 +144,7 @@ if (typeof window !== 'undefined') {
     localStorage.removeItem('nexus_ai_battle_model_stats_v2');
     localStorage.removeItem('nexus_arena_chat_ids');
     localStorage.removeItem('nexus_arena_history');
-  } catch (_) {}
+  } catch (_) { }
 }
 
 import { API_BASE_URL } from './config.js';
@@ -194,7 +194,7 @@ export function getModelRankings(sortBy = 'winrate', searchQuery = '', categoryF
 
   if (searchQuery.trim()) {
     const q = searchQuery.toLowerCase();
-    stats = stats.filter(m => 
+    stats = stats.filter(m =>
       m.label.toLowerCase().includes(q) ||
       m.fullName.toLowerCase().includes(q) ||
       m.provider.toLowerCase().includes(q) ||
@@ -253,19 +253,19 @@ export function recordBattleResult(winnerId, loserId, isDraw = false) {
       }
     } else {
       if (m.id === winnerId) {
-        return { 
-          ...m, 
-          wins: m.wins + 1, 
+        return {
+          ...m,
+          wins: m.wins + 1,
           elo: m.elo + 15,
-          streak: m.streak + 1 
+          streak: m.streak + 1
         };
       }
       if (m.id === loserId) {
-        return { 
-          ...m, 
-          losses: m.losses + 1, 
+        return {
+          ...m,
+          losses: m.losses + 1,
           elo: Math.max(1000, m.elo - 12),
-          streak: 0 
+          streak: 0
         };
       }
     }

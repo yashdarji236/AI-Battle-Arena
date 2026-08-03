@@ -301,10 +301,10 @@ const availableModels = [
   { id: 'gemini', label: 'Gemini Flash', provider: 'Google', elo: '2,250', winrate: '84.5%', param: 'LATEST' },
   { id: 'mistral', label: 'Mistral Medium', provider: 'Mistral', elo: '2,140', winrate: '78.2%', param: '70B PARAM' },
   { id: 'cohere', label: 'Cohere Command', provider: 'Cohere', elo: '2,010', winrate: '71.5%', param: 'PROPRIETARY' },
-  { id: 'groq', label: 'Llama 3.3 (Groq)', provider: 'Meta', elo: '2,190', winrate: '80.5%', param: '70B PARAM' },
-  { id: 'deepseek', label: 'DeepSeek Chat (OpenRouter)', provider: 'DeepSeek', elo: '2,220', winrate: '82.1%', param: 'LATEST' },
-  { id: 'claude', label: 'Claude 3 Haiku (OpenRouter)', provider: 'Anthropic', elo: '2,150', winrate: '79.2%', param: 'LIGHTWEIGHT' },
-  { id: 'gpt', label: 'GPT-4o Mini (GitHub)', provider: 'OpenAI', elo: '2,080', winrate: '75.2%', param: 'LIGHTWEIGHT' }
+  { id: 'groq', label: 'Llama 3.3', provider: 'Meta', elo: '2,190', winrate: '80.5%', param: '70B PARAM' },
+  { id: 'deepseek', label: 'DeepSeek Chat', provider: 'DeepSeek', elo: '2,220', winrate: '82.1%', param: 'LATEST' },
+  { id: 'claude', label: 'Claude 3 Haiku', provider: 'Anthropic', elo: '2,150', winrate: '79.2%', param: 'LIGHTWEIGHT' },
+  { id: 'gpt', label: 'GPT-4o Mini', provider: 'OpenAI', elo: '2,080', winrate: '75.2%', param: 'LIGHTWEIGHT' }
 ];
 
 const getModelInfo = (modelId) => {
@@ -500,7 +500,7 @@ export default function Arena({ onBackToHome }) {
         const parsed = JSON.parse(legacy);
         return parsed.map(c => ({ id: c.id, title: c.title || 'New AI Battle', messages: c.messages || [] }));
       }
-    } catch (_) {}
+    } catch (_) { }
     return [];
   });
 
@@ -699,7 +699,7 @@ export default function Arena({ onBackToHome }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ msgIndex, winnerType })
       }).catch(err => console.warn('Verdict DB sync note:', err));
-    } catch (_) {}
+    } catch (_) { }
 
     setHistory(prev => {
       return prev.map(chat => {
@@ -736,7 +736,7 @@ export default function Arena({ onBackToHome }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId: newId, title: "New AI Battle", messages: [] })
       }).catch(err => console.warn('New chat DB sync note:', err));
-    } catch (_) {}
+    } catch (_) { }
 
     setHistory(prev => [newChat, ...prev]);
     setCurrentChatId(newId);
@@ -752,8 +752,8 @@ export default function Arena({ onBackToHome }) {
   const handleDeleteChat = (id, e) => {
     e.stopPropagation();
     try {
-      fetch(`${API_BASE_URL}/api/chats/${id}`, { method: 'DELETE' }).catch(() => {});
-    } catch (_) {}
+      fetch(`${API_BASE_URL}/api/chats/${id}`, { method: 'DELETE' }).catch(() => { });
+    } catch (_) { }
 
     setHistory(prev => prev.filter(c => c.id !== id));
     if (currentChatId === id) {
@@ -764,8 +764,8 @@ export default function Arena({ onBackToHome }) {
 
   const handleClearAll = () => {
     try {
-      fetch(`${API_BASE_URL}/api/chats`, { method: 'DELETE' }).catch(() => {});
-    } catch (_) {}
+      fetch(`${API_BASE_URL}/api/chats`, { method: 'DELETE' }).catch(() => { });
+    } catch (_) { }
 
     setHistory([]);
     setCurrentChatId(null);
