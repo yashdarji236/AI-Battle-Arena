@@ -90,8 +90,8 @@ app.post("/api/chats", async (req, res) => {
 
         const updated = await ChatModel.findOneAndUpdate(
             { chatId },
-            { 
-                chatId, 
+            {
+                chatId,
                 title: title || "New AI Battle",
                 messages: messages || []
             },

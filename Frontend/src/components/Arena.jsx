@@ -523,17 +523,17 @@ export default function Arena({ onBackToHome }) {
 
 
 
-  // 2. Fetch full chat messages from MongoDB when active chat changes
+  // 2. Fetch full chat messages from MongoDB when active chat changes (guarded against race conditions during battle submission)
   useEffect(() => {
-    if (!currentChatId) return;
+    if (!currentChatId || loading) return;
     const fetchChatMessages = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/chats/${currentChatId}`);
         if (res.ok) {
           const chatData = await res.json();
-          if (chatData && Array.isArray(chatData.messages)) {
+          if (chatData && Array.isArray(chatData.messages) && chatData.messages.length > 0) {
             setHistory(prev => prev.map(c => {
-              if (c.id === currentChatId) {
+              if (c.id === currentChatId && c.messages.length === 0) {
                 return { ...c, title: chatData.title || c.title, messages: chatData.messages };
               }
               return c;
@@ -545,7 +545,7 @@ export default function Arena({ onBackToHome }) {
       }
     };
     fetchChatMessages();
-  }, [currentChatId]);
+  }, [currentChatId, loading]);
 
   useEffect(() => {
     localStorage.setItem('nexus_arena_model_a', modelA);
@@ -750,35 +750,28 @@ export default function Arena({ onBackToHome }) {
 
     setInputText('');
     let chatId = currentChatId;
+    const chatTitle = prompt.length > 30 ? `${prompt.substring(0, 30)}...` : prompt;
+    const userMsg = { role: 'user', content: prompt };
 
-    // Create a new chat if none exists
     if (!chatId) {
       chatId = `chat_${Date.now()}`;
-      const newChat = {
-        id: chatId,
-        title: prompt.length > 30 ? `${prompt.substring(0, 30)}...` : prompt,
-        messages: []
-      };
-      setHistory(prev => [newChat, ...prev]);
       setCurrentChatId(chatId);
-    } else {
-      // Update title if it was default
-      setHistory(prev => prev.map(c => {
-        if (c.id === chatId && (c.title === "New AI Battle" || c.messages.length === 0)) {
-          return { ...c, title: prompt.length > 30 ? `${prompt.substring(0, 30)}...` : prompt };
-        }
-        return c;
-      }));
     }
 
-    // Add user message to state
-    const userMsg = { role: 'user', content: prompt };
-    setHistory(prev => prev.map(c => {
-      if (c.id === chatId) {
-        return { ...c, messages: [...c.messages, userMsg] };
+    // Atomic update to guarantee new chat creation & user message append without state race conditions
+    setHistory(prev => {
+      const exists = prev.some(c => c.id === chatId);
+      if (!exists) {
+        return [{ id: chatId, title: chatTitle, messages: [userMsg] }, ...prev];
       }
-      return c;
-    }));
+      return prev.map(c => {
+        if (c.id === chatId) {
+          const updatedTitle = (c.title === "New AI Battle" || c.messages.length === 0) ? chatTitle : c.title;
+          return { ...c, title: updatedTitle, messages: [...c.messages, userMsg] };
+        }
+        return c;
+      });
+    });
 
     // Trigger loader phases
     setLoading(true);
@@ -841,12 +834,18 @@ export default function Arena({ onBackToHome }) {
         }
       };
 
-      setHistory(prev => prev.map(c => {
-        if (c.id === chatId) {
-          return { ...c, messages: [...c.messages, assistantMsg] };
+      setHistory(prev => {
+        const exists = prev.some(c => c.id === chatId);
+        if (!exists) {
+          return [{ id: chatId, title: chatTitle, messages: [userMsg, assistantMsg] }, ...prev];
         }
-        return c;
-      }));
+        return prev.map(c => {
+          if (c.id === chatId) {
+            return { ...c, messages: [...c.messages, assistantMsg] };
+          }
+          return c;
+        });
+      });
 
     } catch (error) {
       console.error("Battle failed:", error);
@@ -859,12 +858,18 @@ export default function Arena({ onBackToHome }) {
         content: `Combat interrupted. System Error: ${error.message || 'Failed to contact models. Please verify the backend is running.'}`
       };
 
-      setHistory(prev => prev.map(c => {
-        if (c.id === chatId) {
-          return { ...c, messages: [...c.messages, errorMsg] };
+      setHistory(prev => {
+        const exists = prev.some(c => c.id === chatId);
+        if (!exists) {
+          return [{ id: chatId, title: chatTitle, messages: [userMsg, errorMsg] }, ...prev];
         }
-        return c;
-      }));
+        return prev.map(c => {
+          if (c.id === chatId) {
+            return { ...c, messages: [...c.messages, errorMsg] };
+          }
+          return c;
+        });
+      });
     } finally {
       setLoading(false);
       setLoadingPhase('idle');
