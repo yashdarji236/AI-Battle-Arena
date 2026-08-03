@@ -16,7 +16,8 @@ const config = {
     DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || '',
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API || '',
     GITHUB_API_KEY: process.env.GITHUB_API_KEY || process.env.GITHUB_TOKEN || '',
-    MONGO_URL: process.env.MONGO_URL || ''
+    MONGO_URL: process.env.MONGO_URL || '',
+    CLIENT_URL: process.env.CLIENT_URL || 'https://ai-battle-arena-tan.vercel.app'
 };
 
 export default config;

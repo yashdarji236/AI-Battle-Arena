@@ -1,9 +1,31 @@
 import express from "express";
+import cors from "cors";
 import runGraph from "./ai/grapg.ai.js";
 import { connectDB } from "./db/connect.js";
 import { ChatModel } from "./db/chat.schema.js";
+import config from "./config/config.js";
 
 const app = express();
+
+const allowedOrigins = [
+    "https://ai-battle-arena-tan.vercel.app",
+    config.CLIENT_URL,
+    "http://localhost:5173",
+    "http://localhost:3000"
+].filter(Boolean);
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+            callback(null, true);
+        } else {
+            callback(null, true);
+        }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 app.use(express.json());
 
