@@ -60,7 +60,11 @@ app.get("/api/chats/:chatId", async (req, res) => {
         const { chatId } = req.params;
         const chat = await ChatModel.findOne({ chatId });
         if (!chat) {
-            return res.status(404).json({ error: "Chat not found in database" });
+            return res.json({
+                id: chatId,
+                title: "New AI Battle",
+                messages: []
+            });
         }
         res.json({
             id: chat.chatId,
