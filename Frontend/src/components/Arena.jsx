@@ -521,34 +521,7 @@ export default function Arena({ onBackToHome }) {
   const [hoveredVerdict, setHoveredVerdict] = useState(null);
   const [mobileActiveSlides, setMobileActiveSlides] = useState({});
 
-  // 1. Fetch Chat List from MongoDB on mount
-  useEffect(() => {
-    const fetchMongoChatList = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/chats`);
-        if (res.ok) {
-          const list = await res.json();
-          if (Array.isArray(list) && list.length > 0) {
-            setHistory(prev => {
-              const map = new Map();
-              prev.forEach(c => map.set(c.id, c));
-              list.forEach(c => {
-                if (!map.has(c.id)) {
-                  map.set(c.id, { id: c.id, title: c.title, messages: [] });
-                } else {
-                  map.set(c.id, { ...map.get(c.id), title: c.title });
-                }
-              });
-              return Array.from(map.values());
-            });
-          }
-        }
-      } catch (err) {
-        console.warn('MongoDB API offline, using local chat list:', err);
-      }
-    };
-    fetchMongoChatList();
-  }, []);
+
 
   // 2. Fetch full chat messages from MongoDB when active chat changes
   useEffect(() => {
