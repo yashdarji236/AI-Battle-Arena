@@ -5,14 +5,14 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsx watch server.ts"
+    "dev": "tsx watch server.ts",
+    "start": "tsx server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "tsx": "^4.22.4",
+    "tsx": "^4.23.5",
     "typescript": "^6.0.3"
   },
   "dependencies": {
@@ -22,7 +22,7 @@
     "@langchain/langgraph": "^1.4.8",
     "@langchain/mistralai": "^1.2.0",
     "@langchain/openai": "^1.5.5",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "langchain": "^1.5.4",
