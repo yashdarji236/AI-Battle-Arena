@@ -1,9 +1,8 @@
-import app from './src/app.js'
+import app from './src/app.js';
+import { connectDB } from './src/db/connect.js';
 
-
-
-
-app.listen(3000 , ()=>{
-    console.log("Server is running on port number 3000");
-    
-})
+connectDB().then(() => {
+  app.listen(3000, () => {
+    console.log("🚀 AI Battle Arena Server is running on port 3000");
+  });
+});

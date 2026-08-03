@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 
-export default function DiffComparison({ onEnter }) {
+export default function DiffComparison({ onEnter, onNavigate }) {
   const [hoveredDiff, setHoveredDiff] = useState(null);
+
+  const handleGoDashboard = () => {
+    if (onNavigate) {
+      onNavigate('dashboard');
+    }
+  };
 
   return (
     <>
       {/* --- RANKINGS LEADERBOARD --- */}
       <section className="work" id="leaderboard">
         <div className="wrap">
-          <div className="sec-head">
-            <span className="scribble">rankings</span>
-            <h2>Top Contenders</h2>
+          <div className="sec-head flex-between">
+            <div>
+              <span className="scribble">rankings</span>
+              <h2>Top Contenders</h2>
+            </div>
+            <button onClick={handleGoDashboard} className="dash-view-link">
+              View Full Victory Dashboard →
+            </button>
           </div>
 
           <div className="wlist">

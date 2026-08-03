@@ -56,7 +56,7 @@ const drawRuler = (cv, scrollY) => {
   ctx.restore();
 };
 
-export default function Home({ onEnter }) {
+export default function Home({ onEnter, onNavigate }) {
   const [matterLoaded, setMatterLoaded] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [istHour, setIstHour] = useState(12);
@@ -123,22 +123,10 @@ export default function Home({ onEnter }) {
       <DriftingClouds />
 
       {/* Ticks Tape Measure Header Ruler */}
-      <div className="ruler">
-        <div className="r-logo">
-          <b className="r-mark"></b>
-          <span>NEXUS AI ARENA</span>
-        </div>
-        <div className="ticks">
-          <canvas ref={rulerTopRef}></canvas>
-        </div>
-        <div className="r-zoom">
-          <span className="dot"></span>
-          <span>LIVE • IST {currentTime}</span>
-        </div>
-      </div>
+
 
       {/* Navigation Topbar */}
-      <Topbar onEnter={onEnter} />
+      <Topbar onEnter={onEnter} onNavigate={onNavigate} currentView="home" />
 
       {/* Hero Section */}
       <Hero onEnter={onEnter} />
@@ -153,7 +141,7 @@ export default function Home({ onEnter }) {
       <FeaturesTrack />
 
       {/* Top Contenders & Us vs Them Comparison */}
-      <DiffComparison onEnter={onEnter} />
+      <DiffComparison onEnter={onEnter} onNavigate={onNavigate} />
 
       {/* Collapsible FAQ Panels */}
       <FaqAccordion />

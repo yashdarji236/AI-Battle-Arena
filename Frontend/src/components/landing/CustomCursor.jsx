@@ -1,9 +1,25 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export default function CustomCursor() {
   const cursorRef = useRef(null);
+  const [isTouchOrMobile, setIsTouchOrMobile] = useState(false);
 
   useEffect(() => {
+    const checkMobile = () => {
+      const isMobile = window.innerWidth <= 1024 || 
+                       window.matchMedia('(pointer: coarse)').matches || 
+                       'ontouchstart' in window;
+      setIsTouchOrMobile(isMobile);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (isTouchOrMobile) return;
+
     const cursor = cursorRef.current;
     if (!cursor) return;
 
@@ -20,7 +36,6 @@ export default function CustomCursor() {
       if (!target) return;
 
       const nameEl = cursor.querySelector('.name');
-
       const isInTopbar = target.closest('.topbar');
       const yc = target.closest('.ph-yc');
       const w = target.closest('.witem');
@@ -74,7 +89,11 @@ export default function CustomCursor() {
       window.removeEventListener("mouseover", handleMouseOver);
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [isTouchOrMobile]);
+
+  if (isTouchOrMobile) {
+    return null;
+  }
 
   return (
     <div ref={cursorRef} className="fcursor" style={{ transform: 'translate(-100px, -100px)' }}>

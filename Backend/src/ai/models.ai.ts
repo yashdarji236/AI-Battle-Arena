@@ -12,7 +12,7 @@ export const geminiModel = new ChatGoogle({
 
 export const mistralModel = new ChatMistralAI({
     model: "mistral-medium-latest",
-    apiKey: config.MISTRAL_API_KEY,
+    apiKey: config.MistralAI_API_KEY || config.GOOGLE_API_KEY,
 });
 
 export const cohereModel = new ChatCohere({
@@ -42,9 +42,9 @@ export const claudeModel = new ChatOpenAI({
 });
 
 export const gptModel = new ChatOpenAI({
-    modelName: "gpt-4o-mini",
-    apiKey: config.GITHUB_API_KEY,
+    modelName: "openai/gpt-4o-mini",
+    apiKey: config.OPENROUTER_API_KEY || config.GITHUB_API_KEY,
     configuration: {
-        baseURL: "https://models.inference.ai.azure.com",
+        baseURL: config.OPENROUTER_API_KEY ? "https://openrouter.ai/api/v1" : "https://models.inference.ai.azure.com",
     },
 });

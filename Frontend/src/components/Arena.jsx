@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { recordBattleResult, overwriteBattleResult } from '../utils/modelStats';
 
 // Custom syntax highlighter and markdown formatter for premium code styling
 const whitespaceRule = { type: 'text', regex: /^\s+/ };
@@ -487,8 +488,19 @@ const ModelSelector = ({ label, selectedId, otherSelectedId, onChange, disabled 
 export default function Arena({ onBackToHome }) {
   // --- States ---
   const [history, setHistory] = useState(() => {
-    const saved = localStorage.getItem('nexus_arena_history');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const storedIds = localStorage.getItem('nexus_arena_chat_ids');
+      if (storedIds) {
+        const parsed = JSON.parse(storedIds);
+        return parsed.map(c => ({ id: c.id, title: c.title || 'New AI Battle', messages: [] }));
+      }
+      const legacy = localStorage.getItem('nexus_arena_history');
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        return parsed.map(c => ({ id: c.id, title: c.title || 'New AI Battle', messages: c.messages || [] }));
+      }
+    } catch (_) {}
+    return [];
   });
 
   const [currentChatId, setCurrentChatId] = useState(() => {
@@ -501,12 +513,65 @@ export default function Arena({ onBackToHome }) {
 
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loadingPhase, setLoadingPhase] = useState('idle'); // idle, sending, models, judging, final
+  const [loadingPhase, setLoadingPhase] = useState('idle');
   const [expandedReasoning, setExpandedReasoning] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [hoveredVerdict, setHoveredVerdict] = useState(null);
   const [mobileActiveSlides, setMobileActiveSlides] = useState({});
+
+  // 1. Fetch Chat List from MongoDB on mount
+  useEffect(() => {
+    const fetchMongoChatList = async () => {
+      try {
+        const res = await fetch('/api/chats');
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list) && list.length > 0) {
+            setHistory(prev => {
+              const map = new Map();
+              prev.forEach(c => map.set(c.id, c));
+              list.forEach(c => {
+                if (!map.has(c.id)) {
+                  map.set(c.id, { id: c.id, title: c.title, messages: [] });
+                } else {
+                  map.set(c.id, { ...map.get(c.id), title: c.title });
+                }
+              });
+              return Array.from(map.values());
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('MongoDB API offline, using local chat list:', err);
+      }
+    };
+    fetchMongoChatList();
+  }, []);
+
+  // 2. Fetch full chat messages from MongoDB when active chat changes
+  useEffect(() => {
+    if (!currentChatId) return;
+    const fetchChatMessages = async () => {
+      try {
+        const res = await fetch(`/api/chats/${currentChatId}`);
+        if (res.ok) {
+          const chatData = await res.json();
+          if (chatData && Array.isArray(chatData.messages)) {
+            setHistory(prev => prev.map(c => {
+              if (c.id === currentChatId) {
+                return { ...c, title: chatData.title || c.title, messages: chatData.messages };
+              }
+              return c;
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load chat messages from MongoDB:', err);
+      }
+    };
+    fetchChatMessages();
+  }, [currentChatId]);
 
   useEffect(() => {
     localStorage.setItem('nexus_arena_model_a', modelA);
@@ -519,9 +584,13 @@ export default function Arena({ onBackToHome }) {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // Sync to localStorage
+  // 3. Store ONLY lightweight chat IDs & titles in localStorage, notify Dashboard listeners
   useEffect(() => {
-    localStorage.setItem('nexus_arena_history', JSON.stringify(history));
+    const lightweightList = history.map(c => ({ id: c.id, title: c.title }));
+    localStorage.setItem('nexus_arena_chat_ids', JSON.stringify(lightweightList));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nexus_stats_updated'));
+    }
   }, [history]);
 
   useEffect(() => {
@@ -572,7 +641,65 @@ export default function Arena({ onBackToHome }) {
     }
   ];
 
-  const handleManualVerdict = (chatId, msgIndex, winnerType, toastMessage) => {
+  const handleManualVerdict = (chatId, msgIndex, winnerType, customToastMsg) => {
+    const targetChat = history.find(c => c.id === chatId);
+    const targetMsg = targetChat?.messages?.[msgIndex];
+    if (!targetMsg) return;
+
+    const mA = targetMsg.modelA || modelA;
+    const mB = targetMsg.modelB || modelB;
+
+    // Identify previous active winner (User manual winner if set, else Judge winner)
+    const prevWinnerType = targetMsg.manualWinner || targetMsg.judgeWinner || null;
+    let toastText = customToastMsg;
+
+    if (winnerType === 'A') {
+      const winnerId = mA;
+      let updatedStats;
+
+      if (prevWinnerType === 'B') {
+        // User selection overwrites previous winner (Judge or Model B vote)!
+        const prevWinnerId = mB;
+        updatedStats = overwriteBattleResult(prevWinnerId, winnerId);
+        const mInfo = getModelInfo(winnerId);
+        const uData = updatedStats.find(m => m.id === winnerId);
+        toastText = `👑 User Priority Overwrite! ${mInfo.label} awarded +1 Win Point over Judge verdict! (Total Wins: ${uData?.wins})`;
+      } else {
+        updatedStats = recordBattleResult(winnerId, mB);
+        const mInfo = getModelInfo(winnerId);
+        const uData = updatedStats.find(m => m.id === winnerId);
+        toastText = `🏆 Vote Recorded! ${mInfo.label} +1 Win Point! (Total Wins: ${uData?.wins})`;
+      }
+    } else if (winnerType === 'B') {
+      const winnerId = mB;
+      let updatedStats;
+
+      if (prevWinnerType === 'A') {
+        // User selection overwrites previous winner (Judge or Model A vote)!
+        const prevWinnerId = mA;
+        updatedStats = overwriteBattleResult(prevWinnerId, winnerId);
+        const mInfo = getModelInfo(winnerId);
+        const uData = updatedStats.find(m => m.id === winnerId);
+        toastText = `👑 User Priority Overwrite! ${mInfo.label} awarded +1 Win Point over Judge verdict! (Total Wins: ${uData?.wins})`;
+      } else {
+        updatedStats = recordBattleResult(winnerId, mA);
+        const mInfo = getModelInfo(winnerId);
+        const uData = updatedStats.find(m => m.id === winnerId);
+        toastText = `🏆 Vote Recorded! ${mInfo.label} +1 Win Point! (Total Wins: ${uData?.wins})`;
+      }
+    } else if (winnerType === 'both_good') {
+      recordBattleResult(mA, mB, true);
+    }
+
+    // Sync verdict choice to MongoDB
+    try {
+      fetch(`/api/chats/${chatId}/verdict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ msgIndex, winnerType })
+      }).catch(err => console.warn('Verdict DB sync note:', err));
+    } catch (_) {}
+
     setHistory(prev => {
       return prev.map(chat => {
         if (chat.id === chatId) {
@@ -587,7 +714,7 @@ export default function Arena({ onBackToHome }) {
         return chat;
       });
     });
-    setToast(toastMessage);
+    setToast(toastText);
   };
 
   // --- Handlers ---
@@ -600,6 +727,16 @@ export default function Arena({ onBackToHome }) {
       title: "New AI Battle",
       messages: []
     };
+
+    // Save new chat metadata to MongoDB
+    try {
+      fetch('/api/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId: newId, title: "New AI Battle", messages: [] })
+      }).catch(err => console.warn('New chat DB sync note:', err));
+    } catch (_) {}
+
     setHistory(prev => [newChat, ...prev]);
     setCurrentChatId(newId);
     setInputText('');
@@ -613,6 +750,10 @@ export default function Arena({ onBackToHome }) {
 
   const handleDeleteChat = (id, e) => {
     e.stopPropagation();
+    try {
+      fetch(`/api/chats/${id}`, { method: 'DELETE' }).catch(() => {});
+    } catch (_) {}
+
     setHistory(prev => prev.filter(c => c.id !== id));
     if (currentChatId === id) {
       const remaining = history.filter(c => c.id !== id);
@@ -621,6 +762,10 @@ export default function Arena({ onBackToHome }) {
   };
 
   const handleClearAll = () => {
+    try {
+      fetch('/api/chats', { method: 'DELETE' }).catch(() => {});
+    } catch (_) {}
+
     setHistory([]);
     setCurrentChatId(null);
   };
@@ -675,11 +820,12 @@ export default function Arena({ onBackToHome }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ problem: prompt, modelA, modelB }),
+        body: JSON.stringify({ problem: prompt, modelA, modelB, chatId }),
       });
 
       if (!response.ok) {
-        throw new Error('API server returned an error');
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.details || errJson.error || `HTTP ${response.status}: API request failed`);
       }
 
       const data = await response.json();
@@ -689,16 +835,33 @@ export default function Arena({ onBackToHome }) {
       clearTimeout(phaseTimer2);
       setLoadingPhase('final');
 
+      const s1Score = data.judge?.solution_1_score ?? 0;
+      const s2Score = data.judge?.solution_2_score ?? 0;
+      const selectedModelA = data.modelA || modelA;
+      const selectedModelB = data.modelB || modelB;
+      let initialJudgeWinner = 'draw';
+
+      if (s1Score > s2Score) {
+        initialJudgeWinner = 'A';
+        recordBattleResult(selectedModelA, selectedModelB);
+      } else if (s2Score > s1Score) {
+        initialJudgeWinner = 'B';
+        recordBattleResult(selectedModelB, selectedModelA);
+      } else {
+        recordBattleResult(selectedModelA, selectedModelB, true);
+      }
+
       const assistantMsg = {
         role: 'assistant',
         problem: data.problem || prompt,
-        modelA: data.modelA || modelA,
-        modelB: data.modelB || modelB,
+        modelA: selectedModelA,
+        modelB: selectedModelB,
         solution_1: data.solution_1 || "No solution generated.",
         solution_2: data.solution_2 || "No solution generated.",
+        judgeWinner: initialJudgeWinner,
         judge: {
-          solution_1_score: data.judge?.solution_1_score ?? 0,
-          solution_2_score: data.judge?.solution_2_score ?? 0,
+          solution_1_score: s1Score,
+          solution_2_score: s2Score,
           solution_1_reasoing: data.judge?.solution_1_reasoing || data.judge?.solution_1_reasoning || "No evaluation reasoning provided.",
           solution_2_resoning: data.judge?.solution_2_resoning || data.judge?.solution_2_reasoning || "No evaluation reasoning provided."
         }
