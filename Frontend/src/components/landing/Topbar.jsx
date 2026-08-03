@@ -81,7 +81,7 @@ export default function Topbar({ onEnter, onNavigate, currentView = 'home' }) {
         </button>
 
         {/* Mobile Hamburger Toggle Button */}
-        <button 
+        <button
           className="topbar-mobile-toggle"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle Navigation Menu"
@@ -98,29 +98,29 @@ export default function Topbar({ onEnter, onNavigate, currentView = 'home' }) {
               <span className="brand-title">NEXUS <span className="brand-accent">AI ARENA</span></span>
               <button onClick={() => setMobileMenuOpen(false)} className="mobile-close-btn">✕</button>
             </div>
-            
+
             <div className="mobile-nav-links">
-              <a 
-                href="/" 
-                className={currentView === 'home' ? 'active-nav-link' : ''} 
+              <a
+                href="/"
+                className={currentView === 'home' ? 'active-nav-link' : ''}
                 onClick={handleGoHome}
               >
-                🏠 Home
+                Home
               </a>
-              <a 
-                href="/dashboard" 
-                className={currentView === 'dashboard' ? 'active-nav-link' : ''} 
+              <a
+                href="/dashboard"
+                className={currentView === 'dashboard' ? 'active-nav-link' : ''}
                 onClick={handleGoDashboard}
               >
-                📊 Dashboard & Wins
+                Dashboard & Wins
               </a>
-              <a href="#about" onClick={(e) => handleSectionClick(e, 'about')}>ℹ️ About</a>
-              <a href="#process" onClick={(e) => handleSectionClick(e, 'process')}>⚔️ Combat Log</a>
-              <a href="#services" onClick={(e) => handleSectionClick(e, 'services')}>⚡ Features</a>
+              <a href="#about" onClick={(e) => handleSectionClick(e, 'about')}> About</a>
+              <a href="#process" onClick={(e) => handleSectionClick(e, 'process')}>Combat Log</a>
+              <a href="#services" onClick={(e) => handleSectionClick(e, 'services')}>Features</a>
             </div>
 
             <button onClick={() => { setMobileMenuOpen(false); onEnter(); }} className="mobile-enter-cta">
-              🚀 Enter AI Arena
+              Enter AI Arena
             </button>
           </div>
         </div>
