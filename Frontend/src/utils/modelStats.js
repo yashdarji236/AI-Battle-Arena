@@ -147,13 +147,15 @@ if (typeof window !== 'undefined') {
   } catch (_) {}
 }
 
+import { API_BASE_URL } from './config.js';
+
 export function getStoredModelStats() {
   return inMemoryStats;
 }
 
 export async function fetchMongoStats() {
   try {
-    const res = await fetch('/api/stats');
+    const res = await fetch(`${API_BASE_URL}/api/stats`);
     if (res.ok) {
       const dbStats = await res.json();
       inMemoryStats = INITIAL_MODELS.map(m => {

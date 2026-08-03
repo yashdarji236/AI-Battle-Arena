@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { recordBattleResult, overwriteBattleResult } from '../utils/modelStats';
+import { API_BASE_URL } from '../utils/config';
 
 // Custom syntax highlighter and markdown formatter for premium code styling
 const whitespaceRule = { type: 'text', regex: /^\s+/ };
@@ -524,7 +525,7 @@ export default function Arena({ onBackToHome }) {
   useEffect(() => {
     const fetchMongoChatList = async () => {
       try {
-        const res = await fetch('/api/chats');
+        const res = await fetch(`${API_BASE_URL}/api/chats`);
         if (res.ok) {
           const list = await res.json();
           if (Array.isArray(list) && list.length > 0) {
@@ -554,7 +555,7 @@ export default function Arena({ onBackToHome }) {
     if (!currentChatId) return;
     const fetchChatMessages = async () => {
       try {
-        const res = await fetch(`/api/chats/${currentChatId}`);
+        const res = await fetch(`${API_BASE_URL}/api/chats/${currentChatId}`);
         if (res.ok) {
           const chatData = await res.json();
           if (chatData && Array.isArray(chatData.messages)) {
@@ -693,7 +694,7 @@ export default function Arena({ onBackToHome }) {
 
     // Sync verdict choice to MongoDB
     try {
-      fetch(`/api/chats/${chatId}/verdict`, {
+      fetch(`${API_BASE_URL}/api/chats/${chatId}/verdict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ msgIndex, winnerType })
@@ -730,7 +731,7 @@ export default function Arena({ onBackToHome }) {
 
     // Save new chat metadata to MongoDB
     try {
-      fetch('/api/chats', {
+      fetch(`${API_BASE_URL}/api/chats`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId: newId, title: "New AI Battle", messages: [] })
@@ -751,7 +752,7 @@ export default function Arena({ onBackToHome }) {
   const handleDeleteChat = (id, e) => {
     e.stopPropagation();
     try {
-      fetch(`/api/chats/${id}`, { method: 'DELETE' }).catch(() => {});
+      fetch(`${API_BASE_URL}/api/chats/${id}`, { method: 'DELETE' }).catch(() => {});
     } catch (_) {}
 
     setHistory(prev => prev.filter(c => c.id !== id));
@@ -763,7 +764,7 @@ export default function Arena({ onBackToHome }) {
 
   const handleClearAll = () => {
     try {
-      fetch('/api/chats', { method: 'DELETE' }).catch(() => {});
+      fetch(`${API_BASE_URL}/api/chats`, { method: 'DELETE' }).catch(() => {});
     } catch (_) {}
 
     setHistory([]);
@@ -815,7 +816,7 @@ export default function Arena({ onBackToHome }) {
     const phaseTimer2 = setTimeout(() => setLoadingPhase('judging'), 4000);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
