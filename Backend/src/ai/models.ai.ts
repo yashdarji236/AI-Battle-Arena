@@ -1,8 +1,8 @@
 import { ChatGoogle } from "@langchain/google";
 import { ChatMistralAI } from "@langchain/mistralai";
 import { ChatCohere } from "@langchain/cohere";
-import { ChatGroq } from "@langchain/groq";
 import { ChatOpenAI } from "@langchain/openai";
+import { ChatGroq } from '@langchain/groq';
 import config from "../config/config.js";
 
 export const geminiModel = new ChatGoogle({
@@ -11,7 +11,7 @@ export const geminiModel = new ChatGoogle({
 });
 
 export const mistralModel = new ChatMistralAI({
-    model: "mistral-medium-latest",
+    model: "mistral-small-latest",
     apiKey: config.MistralAI_API_KEY || config.GOOGLE_API_KEY,
 });
 
@@ -21,9 +21,11 @@ export const cohereModel = new ChatCohere({
 });
 
 export const groqModel = new ChatGroq({
-    model: "llama-3.3-70b-versatile",
+    model: "openai/gpt-oss-120b",
     apiKey: config.GROQ_API_KEY,
 });
+
+export const llamaModel = groqModel;
 
 export const deepseekModel = new ChatOpenAI({
     modelName: "deepseek/deepseek-chat",
@@ -34,7 +36,7 @@ export const deepseekModel = new ChatOpenAI({
 });
 
 export const claudeModel = new ChatOpenAI({
-    modelName: "anthropic/claude-3-haiku",
+    modelName: "anthropic/claude-3.5-haiku",
     apiKey: config.OPENROUTER_API_KEY,
     configuration: {
         baseURL: "https://openrouter.ai/api/v1",
@@ -43,8 +45,9 @@ export const claudeModel = new ChatOpenAI({
 
 export const gptModel = new ChatOpenAI({
     modelName: "openai/gpt-4o-mini",
-    apiKey: config.OPENROUTER_API_KEY || config.GITHUB_API_KEY,
+    apiKey: config.OPENROUTER_API_KEY,
     configuration: {
-        baseURL: config.OPENROUTER_API_KEY ? "https://openrouter.ai/api/v1" : "https://models.inference.ai.azure.com",
+        baseURL: "https://openrouter.ai/api/v1",
     },
 });
+
